@@ -5,7 +5,9 @@
 #import "stb_image";
 #import "stb_image_resize";
 #import "stb_image_write";
+#import "Math";
 #load "asset.jai";
+#load "image.jai";
 #load "app.jai";
 
 main :: ()
