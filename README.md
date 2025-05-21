@@ -1,10 +1,10 @@
 **Current Features**
 - Edit fruit size
 - Edit catcher size
+- Simple lane cover generator
 
 **Planned Features**
-- Support for lane cover settings
-- Support for FL (big ring overlay)
+- Support for FL (big ring overlay), probably won't implement this as it is kinda useless but will see 
 
 **How to use**
 
