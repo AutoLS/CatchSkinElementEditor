@@ -6,7 +6,7 @@ App_Settings :: struct
     fruit_scale: float = 1.0;
     catcher_scale: float = 1.0;
     enable_lane_cover: bool;
-    lane_cover_scale: float = 1.0;
+    lane_cover_height: s32 = 200;
 
     output_directory: string;
 }
@@ -18,7 +18,10 @@ lane_cover_settings :: (using app_settings: *App_Settings)
     if enable_lane_cover
     {
         ImGui.PushItemWidth(200);
-        ImGui.SliderFloat("Edit lane cover scale", *lane_cover_scale, 0.1, 5, "%.1f");
+        if ImGui.InputInt("Edit Height", *lane_cover_height, 5, 10)
+        {
+            Clamp(*lane_cover_height, 50, 1366);
+        }
         ImGui.PopItemWidth();
     }
 }
@@ -36,7 +39,7 @@ app_ui :: (using app_settings: *App_Settings, using asset_storage: *Asset_Storag
     ImGui.SliderFloat("Edit catcher scale", *catcher_scale, 0.1, 5, "%.1f");
     ImGui.PopItemWidth();
 
-    //lane_cover_settings(app_settings);
+    lane_cover_settings(app_settings);
     
     ImGui.Separator();
 
@@ -86,12 +89,6 @@ export :: (settings: *App_Settings, asset_storage: *Asset_Storage) -> bool
             {
                 scale = settings.catcher_scale;
             }
-            case .scorebar_bg;
-            {
-                if !settings.enable_lane_cover then continue;
-                
-                scale = settings.lane_cover_scale;
-            }
             case;
             {                
                 scale = settings.fruit_scale;
@@ -114,6 +111,23 @@ export :: (settings: *App_Settings, asset_storage: *Asset_Storage) -> bool
         stbi_write_png(temp_c_string(image_output_path), new_width, new_height, asset.channels, resized_image_data, new_width * asset.channels);
 
         free(resized_image_data);
+    }
+
+    if settings.enable_lane_cover
+    {
+        image_width: s32 = 1366;
+        image_height: s32 = 786;
+        scorebar_bg_image := create_transparent_image(image_width, image_height);
+        
+        rect_x: s32 = 216;
+        rect_y: s32 = 0;
+        rect_w: s32 = 934;
+        fill_rectangle_at_position(scorebar_bg_image, .{0, 0, 0}, image_width, image_height, rect_x, rect_y, rect_w, settings.lane_cover_height);
+
+        image_output_path := tprint("%/scorebar-bg.png", settings.output_directory);
+        stbi_write_png(temp_c_string(image_output_path), image_width, image_height, 4, scorebar_bg_image, image_width * 4);
+
+        free(scorebar_bg_image);
     }
 
     return true;
