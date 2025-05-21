@@ -16,7 +16,6 @@ Asset_Name :: enum u32
     fruit_orange_overlay;
     fruit_pear;
     fruit_pear_overlay;
-    scorebar_bg;
 }
 
 Asset :: struct
