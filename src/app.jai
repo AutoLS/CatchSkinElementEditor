@@ -1,21 +1,18 @@
+#import "File";
+
 App_Settings :: struct 
 {
+    name: *u8;
     fruit_scale: float = 1.0;
     catcher_scale: float = 1.0;
     enable_lane_cover: bool;
     lane_cover_scale: float = 1.0;
+
+    output_directory: string;
 }
 
-app_ui :: (using app_settings: *App_Settings, using asset_storage: *Asset_Storage)
+lane_cover_settings :: (using app_settings: *App_Settings)
 {
-    ImGui.PushItemWidth(200);
-    ImGui.SliderFloat("Edit fruit scale", *fruit_scale, 0.1, 5, "%.1f");
-    ImGui.PopItemWidth();
-
-    ImGui.PushItemWidth(200);
-    ImGui.SliderFloat("Edit catcher scale", *catcher_scale, 0.1, 5, "%.1f");
-    ImGui.PopItemWidth();
-
     ImGui.Checkbox("Enable lane cover", *enable_lane_cover);
 
     if enable_lane_cover
@@ -24,21 +21,100 @@ app_ui :: (using app_settings: *App_Settings, using asset_storage: *Asset_Storag
         ImGui.SliderFloat("Edit lane cover scale", *lane_cover_scale, 0.1, 5, "%.1f");
         ImGui.PopItemWidth();
     }
+}
+
+app_ui :: (using app_settings: *App_Settings, using asset_storage: *Asset_Storage)
+{
+    ImGui.PushItemWidth(200);
+    ImGui.InputText("Output Name", name, 32);
+    ImGui.PopItemWidth();
+    ImGui.PushItemWidth(200);
+    ImGui.SliderFloat("Edit fruit scale", *fruit_scale, 0.1, 5, "%.1f");
+    ImGui.PopItemWidth();
+
+    ImGui.PushItemWidth(200);
+    ImGui.SliderFloat("Edit catcher scale", *catcher_scale, 0.1, 5, "%.1f");
+    ImGui.PopItemWidth();
+
+    //lane_cover_settings(app_settings);
     
     ImGui.Separator();
 
-    ImGui.Text("Preview");
-    ImGui.BeginChild("Preview", .{385, 250}, true, IMGUI_WINDOW_FLAGS.AlwaysVerticalScrollbar | IMGUI_WINDOW_FLAGS.AlwaysHorizontalScrollbar);
+    ImGui.Text("Simple Preview");
+    ImGui.BeginChild("Preview", .{385, 325}, true, IMGUI_WINDOW_FLAGS.AlwaysVerticalScrollbar | IMGUI_WINDOW_FLAGS.AlwaysHorizontalScrollbar);
 
     fruit := table_find_pointer(*asset_table, .fruit_apple);
     catcher := table_find_pointer(*asset_table, .fruit_catcher_idle);
     
     fruit_new_w := 64 * fruit_scale;
     fruit_new_h := 64 * fruit_scale;
-    catcher_new_w := 128 * catcher_scale;
-    catcher_new_h := 128 * catcher_scale;
+    catcher_new_w := 98 * catcher_scale;
+    catcher_new_h := 98 * catcher_scale;
     ImGui.Image(cast(*void)fruit.texture, ImGui.ImVec2.{fruit_new_w, fruit_new_h});
     ImGui.Image(cast(*void)catcher.texture, ImGui.ImVec2.{catcher_new_w, catcher_new_h});
 
     ImGui.EndChild();
+}
+
+export :: (settings: *App_Settings, asset_storage: *Asset_Storage) -> bool
+{
+    name := to_string(settings.name);
+    if name.count == 0
+    {
+        name = "default";
+    }
+
+    if settings.output_directory
+    {
+        free(settings.output_directory);
+    }
+
+    settings.output_directory = copy_string(tprint("output/%", name));
+    make_directory_if_it_does_not_exist("output");
+    make_directory_if_it_does_not_exist(settings.output_directory);
+    for i : 0 .. enum_highest_value(Asset_Name)
+    {
+        asset_enum := cast(Asset_Name)i;
+        asset := table_find_pointer(*asset_storage.asset_table, asset_enum);
+        scale: float;
+
+        if asset_enum == 
+        {
+            case .fruit_catcher_fail; #through;
+            case .fruit_catcher_idle; #through;
+            case .fruit_catcher_kiai;
+            {
+                scale = settings.catcher_scale;
+            }
+            case .scorebar_bg;
+            {
+                if !settings.enable_lane_cover then continue;
+                
+                scale = settings.lane_cover_scale;
+            }
+            case;
+            {                
+                scale = settings.fruit_scale;
+            }
+        }
+
+        new_width: s32 = cast(s32)(asset.width * scale);
+        new_height: s32 = cast(s32)(asset.height * scale);
+        resized_image_data := alloc(new_width * new_height * asset.channels);
+
+        result := stbir_resize_uint8(asset.data, asset.width, asset.height, 0, resized_image_data, new_width, new_height, 0, asset.channels);
+
+        if !result
+        {
+            free(resized_image_data);
+            return false;
+        }
+
+        image_output_path := tprint("%/%", settings.output_directory, asset.file_name);
+        stbi_write_png(temp_c_string(image_output_path), new_width, new_height, asset.channels, resized_image_data, new_width * asset.channels);
+
+        free(resized_image_data);
+    }
+
+    return true;
 }
