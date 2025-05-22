@@ -9,6 +9,7 @@ App_Settings :: struct
     lane_cover_height: s32 = 200;
 
     output_directory: string;
+    assets_loaded: bool;
 }
 
 lane_cover_settings :: (using app_settings: *App_Settings)

@@ -37,7 +37,7 @@ Asset_Storage :: struct
     asset_table: Table(Asset_Name, Asset);
 }
 
-load_skin_assets :: (using asset_storage: *Asset_Storage)
+load_skin_assets :: (using asset_storage: *Asset_Storage) -> bool
 {
     for i : 0 .. enum_highest_value(Asset_Name)
     {
@@ -57,5 +57,11 @@ load_skin_assets :: (using asset_storage: *Asset_Storage)
             table_add(*asset_table, asset.type, asset); 
             print("File loaded: %\n", asset.file_name);       
         }
+        else
+        {
+            return false;
+        }
     }
+
+    return true;
 }

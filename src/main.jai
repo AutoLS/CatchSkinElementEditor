@@ -22,10 +22,10 @@ main :: ()
     main_tool_active: bool;
 
     asset_storage: Asset_Storage;
-    load_skin_assets(*asset_storage);
-
+    
     app_settings: App_Settings;
     app_settings.name = alloc(32);
+    app_settings.assets_loaded = load_skin_assets(*asset_storage);;
     memset(app_settings.name, 0, 32);
 
     export_popup := false;
@@ -76,9 +76,30 @@ main :: ()
 
         //handle_file_action(*app, is_new_file, is_open_file, is_save_file);
 
-        app_ui(*app_settings, *asset_storage);
+        if app_settings.assets_loaded
+        {
+            app_ui(*app_settings, *asset_storage);
+        }
+        else
+        {
+            ImGui.PushTextWrapPos(400);
+            ImGui.TextUnformatted("Assets loading failed, please make sure all file names are correct and there are no missing files. Here is the list of files that you need:");
+            ImGui.PopTextWrapPos();
 
-        if is_export
+            ImGui.NewLine();
+
+            for 0 .. enum_highest_value(Asset_Name)
+            {
+                file_name := tprint("%", enum_value_to_name(cast(Asset_Name)it));
+                replace_chars(file_name, "_", 45);
+                file_name = join(file_name, ".png");
+
+                ImGui.Text(file_name);
+            }
+        }
+
+
+        if is_export && app_settings.assets_loaded
         {
             export_popup = export(*app_settings, *asset_storage);
         }
