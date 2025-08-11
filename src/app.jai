@@ -10,16 +10,17 @@ App_Settings :: struct
 
     output_directory: string;
     assets_loaded: bool;
+    actual_preview: bool;
 }
 
 lane_cover_settings :: (using app_settings: *App_Settings)
 {
-    ImGui.Checkbox("Enable lane cover", *enable_lane_cover);
+    ImGui.Checkbox("Generate lane cover", *enable_lane_cover);
 
     if enable_lane_cover
     {
         ImGui.PushItemWidth(200);
-        if ImGui.InputInt("Edit Height", *lane_cover_height, 5, 10)
+        if ImGui.InputInt("Edit Height (in pixels)", *lane_cover_height, 5, 10)
         {
             Clamp(*lane_cover_height, 50, 1366);
         }
@@ -33,11 +34,13 @@ app_ui :: (using app_settings: *App_Settings, using asset_storage: *Asset_Storag
     ImGui.InputText("Output Name", name, 32);
     ImGui.PopItemWidth();
     ImGui.PushItemWidth(200);
-    ImGui.SliderFloat("Edit fruit scale", *fruit_scale, 0.1, 5, "%.1f");
+    ImGui.InputFloat("Edit fruit scale", *fruit_scale, 0.1, 0.5, "%.2f");
+    Clamp(*fruit_scale, cast(float)0.1, cast(float)5.0);
     ImGui.PopItemWidth();
 
     ImGui.PushItemWidth(200);
-    ImGui.SliderFloat("Edit catcher scale", *catcher_scale, 0.1, 5, "%.1f");
+    ImGui.InputFloat("Edit catcher scale", *catcher_scale, 0.1, 0.5, "%.2f");
+    Clamp(*catcher_scale, cast(float)0.1, cast(float)5.0);
     ImGui.PopItemWidth();
 
     lane_cover_settings(app_settings);
@@ -45,18 +48,36 @@ app_ui :: (using app_settings: *App_Settings, using asset_storage: *Asset_Storag
     ImGui.Separator();
 
     ImGui.Text("Simple Preview");
+    ImGui.Checkbox("Actual Size", *actual_preview);
+    
     ImGui.BeginChild("Preview", .{385, 325}, true, IMGUI_WINDOW_FLAGS.AlwaysVerticalScrollbar | IMGUI_WINDOW_FLAGS.AlwaysHorizontalScrollbar);
 
     fruit := table_find_pointer(*asset_table, .fruit_apple);
     catcher := table_find_pointer(*asset_table, .fruit_catcher_idle);
     
-    fruit_new_w := 64 * fruit_scale;
-    fruit_new_h := 64 * fruit_scale;
-    catcher_new_w := 98 * catcher_scale;
-    catcher_new_h := 98 * catcher_scale;
+    fruit_new_w: float;
+    fruit_new_h: float;
+    catcher_new_w: float;
+    catcher_new_h: float;
+
+    if actual_preview
+    {
+        fruit_new_w = fruit.width * fruit_scale;
+        fruit_new_h = fruit.height * fruit_scale;
+        catcher_new_w = catcher.width * catcher_scale;
+        catcher_new_h = catcher.height * catcher_scale;
+    }
+    else
+    {
+        fruit_new_w = 64 * fruit_scale;
+        fruit_new_h = 64 * fruit_scale;
+        catcher_new_w = 98 * catcher_scale;
+        catcher_new_h = 98 * catcher_scale;
+    }
+
     ImGui.Image(cast(*void)fruit.texture, ImGui.ImVec2.{fruit_new_w, fruit_new_h});
     ImGui.Image(cast(*void)catcher.texture, ImGui.ImVec2.{catcher_new_w, catcher_new_h});
-
+    
     ImGui.EndChild();
 }
 
