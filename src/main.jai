@@ -25,7 +25,7 @@ main :: ()
     
     app_settings: App_Settings;
     app_settings.name = alloc(32);
-    app_settings.assets_loaded = load_skin_assets(*asset_storage);;
+    app_settings.assets_loaded = load_skin_assets(*asset_storage);
     memset(app_settings.name, 0, 32);
 
     export_popup := false;

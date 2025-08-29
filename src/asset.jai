@@ -1,5 +1,6 @@
 #import "Reflection";
 #import "Hash_Table";
+#import "File_Utilities";
 #import "String";
 
 Asset_Name :: enum u32
@@ -48,7 +49,14 @@ load_skin_assets :: (using asset_storage: *Asset_Storage) -> bool
         asset.name = copy_string(enum_value_to_name(asset_enum));
         replace_chars(asset.name, "_", 45); //NOTE: 45 is the ascii code for '-'
         asset.file_name = join(asset.name, ".png");
+        file_name_2x := join(asset.name, "@2x.png");
         file_path := tprint("assets/%", asset.file_name);
+        if !file_exists(file_path)
+        {
+            asset.file_name = join(asset.name, "@2x.png");
+            file_path = tprint("assets/%", asset.file_name);
+        }
+
         asset.data = stbi_load(temp_c_string(file_path), *asset.width, *asset.height, *asset.channels, 0);
 
         if asset.data
