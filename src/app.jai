@@ -97,6 +97,8 @@ export :: (settings: *App_Settings, asset_storage: *Asset_Storage) -> bool
     settings.output_directory = copy_string(tprint("output/%", name));
     make_directory_if_it_does_not_exist("output");
     make_directory_if_it_does_not_exist(settings.output_directory);
+    make_directory_if_it_does_not_exist(tprint("%/normal", settings.output_directory));
+    make_directory_if_it_does_not_exist(tprint("%/2x", settings.output_directory));
     for i : 0 .. enum_highest_value(Asset_Name)
     {
         asset_enum := cast(Asset_Name)i;
@@ -129,7 +131,9 @@ export :: (settings: *App_Settings, asset_storage: *Asset_Storage) -> bool
             return false;
         }
 
-        image_output_path := tprint("%/%", settings.output_directory, asset.file_name);
+        image_output_path := tprint("%/normal/%.png", settings.output_directory, asset.name);
+        stbi_write_png(temp_c_string(image_output_path), new_width, new_height, asset.channels, resized_image_data, new_width * asset.channels);
+        image_output_path = tprint("%/2x/%@2x.png", settings.output_directory, asset.name);
         stbi_write_png(temp_c_string(image_output_path), new_width, new_height, asset.channels, resized_image_data, new_width * asset.channels);
 
         free(resized_image_data);
